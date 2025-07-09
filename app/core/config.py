@@ -30,7 +30,12 @@ class Settings(BaseSettings):
     ai_max_tokens: int = 2000
     
     # CORS
-    cors_origins: list[str] = ["http://localhost:5173", "http://localhost:5174", "http://127.0.0.1:5173"]
+    cors_origins: list[str] = [
+        "http://localhost:5173", 
+        "http://localhost:5174", 
+        "http://127.0.0.1:5173",
+        "https://psikofikir.netlify.app"
+    ]
 
     # Scheduler defaults
     scheduler_timezone: str = "Europe/Istanbul"
