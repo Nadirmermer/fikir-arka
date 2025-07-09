@@ -36,6 +36,9 @@ feedparser==6.0.11
 # Twitter scraping
 twscrape==0.17.0
 
+# Pydantic için ayar yönetimi
+pydantic-settings==2.5.2
+
 # YouTube kanal çözümleme için yt-dlp yeterli
 # feedsearch==2.0.1  # KALDIRILDI: Çok eski ve bakımsız
 # feedfinder2==0.0.4  # KALDIRILDI: Çok eski ve bakımsız
