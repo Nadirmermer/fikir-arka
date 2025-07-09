@@ -343,5 +343,6 @@ This project is licensed under the MIT License.
 For issues and questions:
 - Check the logs in debug mode
 - Review the API documentation at `/docs`
-- Ensure all environment variables are set correctly #   f i k i r - a r k a  
+- Ensure all environment variables are set correctly #   f i k i r - a r k a 
+ 
  
