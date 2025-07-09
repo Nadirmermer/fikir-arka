@@ -1,0 +1,44 @@
+# Web Framework ve Server
+fastapi==0.115.6
+uvicorn[standard]==0.35.0
+
+# Database ve ORM
+sqlalchemy==2.0.36
+aiosqlite==0.20.0
+
+# HTTP İstemcisi ve Web Scraping
+requests==2.32.3
+beautifulsoup4==4.12.3
+lxml==5.3.0
+
+# Modern Web Scraping (scrapling yerine requests + beautifulsoup kullanacağız)
+# scrapling==0.2.1  # KALDIRILDI: Az kullanılan ve güncel olmayan
+# scrapling-fetchers==0.1.2  # KALDIRILDI: scrapling bağımlılığı
+
+# Pydantic (Data Validation)
+pydantic==2.10.4
+
+# OpenAI API (şu an kullanılmıyor ama gelecek için hazır)
+# openai==1.58.1  # KALDIRILDI: Şu an Gemini kullanıyoruz
+
+# Background Jobs
+apscheduler==3.10.4
+
+# File Upload Support
+python-multipart==0.0.17
+
+# YouTube ve RSS Feed Araçları
+yt-dlp==2025.6.30
+
+# RSS Feed Discovery (feedsearch yerine feedparser kullanacağız)
+feedparser==6.0.11
+
+# Twitter scraping
+twscrape==0.17.0
+
+# YouTube kanal çözümleme için yt-dlp yeterli
+# feedsearch==2.0.1  # KALDIRILDI: Çok eski ve bakımsız
+# feedfinder2==0.0.4  # KALDIRILDI: Çok eski ve bakımsız
+
+# KALDIRILACAKLAR:
+# youtube-dl==2021.12.17  # KALDIRILDI: Tamamen deprecated, yt-dlp kullanacağız 
