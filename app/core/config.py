@@ -31,7 +31,7 @@ class Settings(BaseSettings):
     
     # Production settings
     production_mode: bool = Field(default=False, alias="PRODUCTION")
-    log_level: str = Field(default="INFO", description="Logging level: DEBUG, INFO, WARNING, ERROR")
+    log_level: str = Field(default="INFO", alias="LOG_LEVEL", description="Logging level: DEBUG, INFO, WARNING, ERROR")
     max_request_size: int = Field(default=10485760, description="Max request size in bytes (10MB)")
     
     # Rate limiting for production
@@ -43,8 +43,23 @@ class Settings(BaseSettings):
         "http://localhost:5173", 
         "http://localhost:5174", 
         "http://127.0.0.1:5173",
-        "https://psikofikir.netlify.app"
+        "http://127.0.0.1:5174",
+        "https://psikofikir.netlify.app",
+        "https://*.netlify.app",  # Netlify preview URLs
+        "https://*.vercel.app",   # Vercel preview URLs
+        # Production'da environment variable'dan alınacak ek domain'ler
     ]
+    
+    # Additional CORS origins from environment
+    additional_cors_origins: str = Field("", alias="ADDITIONAL_CORS_ORIGINS")
+
+    def get_all_cors_origins(self) -> list[str]:
+        """Get all CORS origins including additional ones from environment"""
+        origins = self.cors_origins.copy()
+        if self.additional_cors_origins:
+            additional = [origin.strip() for origin in self.additional_cors_origins.split(",")]
+            origins.extend(additional)
+        return origins
 
     # Scheduler defaults
     scheduler_timezone: str = "Europe/Istanbul"
@@ -58,11 +73,13 @@ class Settings(BaseSettings):
             self.db_echo = False
             self.log_level = "WARNING"
 
+    # Pydantic SettingsConfigDict: extra env vars ignored
     model_config = SettingsConfigDict(
-        env_file=".env", 
+        env_file=".env",
         env_file_encoding='utf-8',
         case_sensitive=True,
-        populate_by_name=True
+        populate_by_name=True,
+        extra='ignore'  # Ignore undefined env vars instead of raising ValidationError
     )
 
 # Global settings instance

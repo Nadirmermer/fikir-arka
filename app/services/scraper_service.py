@@ -328,20 +328,27 @@ class EnhancedScraperService:
     async def _scrape_source_enhanced(self, source: Source) -> ScrapingResult:
         """Enhanced source scraping with better error handling"""
         try:
-            # Route to appropriate scraper
-            if source.platform.lower() == "youtube":
+            platform = source.platform.lower()
+
+            # Heuristic: If platform is website but URL indicates feed, override to RSS
+            if platform == "website" and re.search(r"(\.rss$|\.xml$|/feed/?$)", source.url, re.IGNORECASE):
+                logger.debug(f"🔍 RSS feed detected from website source, switching platform for this run")
+                platform = "rss"
+
+            if platform == "youtube":
                 return await self._scrape_youtube_enhanced(source)
-            elif source.platform.lower() in ["rss", "blog", "rss/blog"]:
+            elif platform in ["rss", "blog", "rss/blog"]:
                 return await self._scrape_rss_enhanced(source)
-            elif source.platform.lower() == "instagram":
+            elif platform == "instagram":
                 return await self._scrape_instagram_enhanced(source)
-            elif source.platform.lower() in ["twitter", "x"]:
+            elif platform in ["twitter", "x"]:
                 return await self._scrape_twitter_enhanced(source)
-            else:
+            elif platform == "website":
                 return await self._scrape_website_enhanced(source)
-                
+            else:
+                raise Exception(f"Unsupported platform: {source.platform}")
         except Exception as e:
-            logger.error(f"Error scraping {source.name}: {str(e)}")
+            logger.error(f"Source scraping error for {source.name}: {str(e)}")
             return ScrapingResult(
                 success=False,
                 new_content_count=0,
