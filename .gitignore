@@ -37,6 +37,7 @@ venv.bak/
 .idea/
 
 # Veritabanı ve Ayarlar
-/data/content_manager.db
-/data/content_manager.db-journal
 settings.json 
+
+# Veritabanı
+content-manager-api/data/*.db 
