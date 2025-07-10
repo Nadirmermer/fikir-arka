@@ -283,10 +283,13 @@ if __name__ == "__main__":
     # Use production settings if PRODUCTION env var is set
     production = settings.production_mode
     
+    import os
+    port = int(os.getenv("PORT", 8000))  # Railway/Heroku PORT desteği
+
     uvicorn.run(
         "main:app",
         host="0.0.0.0",
-        port=8000,
+        port=port,
         reload=not production,  # Disable reload in production
         log_level=settings.log_level.lower(),
         access_log=not production,  # Disable access log in production for performance
