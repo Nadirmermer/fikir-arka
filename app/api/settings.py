@@ -6,7 +6,9 @@ from fastapi import APIRouter, HTTPException
 from typing import Dict, Any, List
 import json
 import os
-from app.core.config import get_settings
+from app.core.config import get_settings as get_config_settings
+from app.core.config import get_database_path
+from app.database import engine, init_database
 
 router = APIRouter()
 
@@ -35,7 +37,7 @@ async def get_settings() -> Dict[str, Any]:
             }
 
         # Add current system settings
-        sys_settings = get_settings()
+        sys_settings = get_config_settings()
         settings_data.update({
             "gemini_api_key_configured": bool(sys_settings.gemini_api_key),
             "database_url": sys_settings.database_url,
@@ -275,3 +277,20 @@ async def get_system_stats() -> Dict[str, Any]:
                 "current_time": "2025-01-09T18:30:00Z"
             }
         } 
+
+@router.post("/reset-db")
+async def reset_database() -> Dict[str, Any]:
+    """Tüm veritabanını siler ve temiz bir şekilde yeniden oluşturur (YALNIZCA SQLite)."""
+    settings = get_config_settings()
+    try:
+        # Şu anda sadece SQLite destekleniyor
+        if settings.database_url.startswith("sqlite"):
+            # Bağlantıyı kapat
+            await engine.dispose()
+            # Dosyayı doğrudan silmek yerine tabloları drop & create yapalım (lock sorunlarını önler)
+            await init_database()
+            return {"success": True, "message": "Veritabanı sıfırlandı"}
+        else:
+            raise HTTPException(status_code=400, detail="Bu işlem sadece SQLite veritabanı için desteklenmektedir.")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Veritabanı sıfırlama hatası: {str(e)}") 
