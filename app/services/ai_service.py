@@ -160,7 +160,7 @@ Sen bir psikoloji alanında uzman içerik üreticisisin. YouTube için kısa, et
 Görevin: Verilen konuyu baz alarak, özgün ve ilgi çekici bir YouTube videosu scripti yazmak.
 
 Video formatı:
-- 30-60 saniye arası kısa video
+- Detaylı ve tam bir YouTube video senaryosu
 - Hook (ilk 3 saniye çok önemli!)
 - Ana mesaj (net ve anlaşılır)
 - Call to action (beğen, yorum yap, takip et)
@@ -185,7 +185,7 @@ Verilen konu:
         # Replace placeholder with actual content
         final_prompt = base_prompt.replace(
             "[BURAYA MÜŞTERİNİN WEB SİTESİNDEN SEÇTİĞİ KONU BAŞLIĞI GELECEK]", 
-            f"**Başlık:** {title}\n\n**İçerik:** {content[:1000]}..."
+            f"**Başlık:** {title}\n\n**İçerik:** {content}"
         )
         
         return final_prompt

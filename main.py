@@ -6,7 +6,7 @@ Modern FastAPI + SQLite + AI Backend
 Özellikler:
 - Otomatik web scraping (sabah 07:00)
 - Swipe-based content değerlendirme
-- Gemini 2.5 AI content generation
+- Gemini 2.0 AI content generation
 - Modern REST API
 - Otomatik OpenAPI documentation
 """
@@ -18,6 +18,7 @@ from sqlalchemy import text
 import uvicorn
 from datetime import datetime
 import logging
+import sys
 from contextlib import asynccontextmanager
 
 # Local imports
@@ -30,11 +31,20 @@ from app.api import topics, sources, ai_content, stats, settings as settings_api
 from app.api import twitter_auth
 from app.core.config import get_settings
 
-# Logging setup
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
+# Logging setup - production ready
 settings = get_settings()
+
+# Configure logging based on environment
+log_level = getattr(logging, settings.log_level.upper(), logging.INFO)
+logging.basicConfig(
+    level=log_level,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(sys.stdout),
+        logging.FileHandler("app.log") if settings.production_mode else logging.NullHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
 
 # Scheduler instance
 scheduler_service = None
@@ -63,20 +73,20 @@ async def lifespan(app: FastAPI):
         await scheduler_service.stop()
     logger.info("📴 Content Manager API kapandı")
 
-# FastAPI app instance
+# FastAPI app instance with production configuration
 app = FastAPI(
     title="Content Manager API",
     description="Modern AI-powered content management system",
     version="2.0.0",
-    docs_url="/docs",
-    redoc_url="/redoc",
+    docs_url="/docs" if not settings.production_mode else None,  # Disable docs in production
+    redoc_url="/redoc" if not settings.production_mode else None,  # Disable redoc in production
     lifespan=lifespan
 )
 
-# CORS middleware
+# CORS middleware - production-ready configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5174", "http://localhost:3000", "http://localhost:5175", "http://localhost:5173"],
+    allow_origins=settings.cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -141,46 +151,108 @@ async def health_check():
 async def trigger_manual_scrape(background_tasks: BackgroundTasks):
     """Enhanced manuel kazıma tetikleme"""
     try:
+        logger.info("🚀 Manual scrape triggered by user")
+        
+        # Reset scraping status
+        scraper_service.scraping_status = {
+            "status": "starting",
+            "progress": {"processed": 0, "total": 0},
+            "current_source": "Initializing...",
+            "new_content_count": 0,
+            "errors": [],
+            "start_time": datetime.now().isoformat(),
+            "end_time": None,
+            "duration": 0
+        }
+        
         background_tasks.add_task(scraper_service.scrape_all_sources)
         
         return {
             "success": True,
             "message": "🚀 Gelişmiş kazıma sistemi başlatıldı",
             "timestamp": datetime.now().isoformat(),
+            "status": "started",
             "features": [
                 "🎯 Akıllı içerik filtreleme",
                 "⚡ Rate limiting koruması", 
                 "🔍 Gelişmiş duplicate detection",
-                "📊 Detaylı performans metrics"
+                "📊 Detaylı performans metrics",
+                "🛡️ Production-ready error handling"
             ]
         }
     except Exception as e:
-        logger.error(f"Enhanced scrape error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Enhanced scrape error: {e}", exc_info=True)
+        scraper_service.scraping_status["status"] = "failed"
+        scraper_service.scraping_status["errors"].append(str(e))
+        raise HTTPException(status_code=500, detail=f"Scraping başlatma hatası: {str(e)}")
 
 @app.get("/api/scrape/status")
 async def get_scrape_status():
-    """Anlık kazıma durumunu döndürür."""
-    return scraper_service.scraping_status
+    """Enhanced scraping status with detailed metrics"""
+    try:
+        status = scraper_service.scraping_status.copy()
+        
+        # Add system metrics if available
+        if hasattr(scraper_service, 'get_stats'):
+            stats = scraper_service.get_stats()
+            status["system_stats"] = {
+                "version": stats.get("version", "1.0.0"),
+                "session_active": stats.get("session_info", {}).get("session_active", False),
+                "rate_limits": stats.get("rate_limits", {}),
+                "dependencies": stats.get("dependencies", {})
+            }
+        
+        # Calculate duration if running
+        if status.get("start_time") and not status.get("end_time"):
+            start_time = datetime.fromisoformat(status["start_time"])
+            status["duration"] = int((datetime.now() - start_time).total_seconds())
+        
+        return {
+            "success": True,
+            "data": status,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        logger.error(f"Status check error: {e}", exc_info=True)
+        return {
+            "success": False,
+            "error": "Status bilgisi alınamadı",
+            "timestamp": datetime.now().isoformat()
+        }
 
-# Global exception handler
+# Enhanced global exception handler with production considerations
 @app.exception_handler(Exception)
 async def global_exception_handler(request, exc):
-    logger.error(f"Global error: {exc}")
+    logger.error(f"Global error on {request.url}: {exc}", exc_info=True)
+    
+    # In production, hide sensitive error details
+    if settings.production_mode:
+        error_detail = "Internal server error"
+    else:
+        error_detail = str(exc)
+    
     return JSONResponse(
         status_code=500,
         content={
             "success": False,
-            "error": "Internal server error",
-            "timestamp": datetime.now().isoformat()
+            "error": error_detail,
+            "timestamp": datetime.now().isoformat(),
+            "path": str(request.url.path) if not settings.production_mode else None
         }
     )
 
+# Production-ready startup
 if __name__ == "__main__":
+    # Use production settings if PRODUCTION env var is set
+    production = settings.production_mode
+    
     uvicorn.run(
         "main:app",
         host="0.0.0.0",
         port=8000,
-        reload=True,
-        log_level="info"
+        reload=not production,  # Disable reload in production
+        log_level=settings.log_level.lower(),
+        access_log=not production,  # Disable access log in production for performance
+        workers=1 if not production else 4  # Multiple workers in production
     ) 

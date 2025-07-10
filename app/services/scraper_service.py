@@ -1511,5 +1511,35 @@ class EnhancedScraperService:
                 error=str(e)
             )
 
+    def get_stats(self) -> Dict[str, Any]:
+        """Get scraper statistics"""
+        return {
+            'version': '1.0.0',
+            'rate_limits': {
+                'youtube': self.rate_limits.get('youtube', {}),
+                'instagram': self.rate_limits.get('instagram', {}), 
+                'twitter': self.rate_limits.get('twitter', {}),
+                'website': self.rate_limits.get('website', {}),
+                'rss': self.rate_limits.get('rss', {})
+            },
+            'last_scraping_results': {
+                'total_sources_processed': getattr(self, 'last_total_sources', 0),
+                'successful_sources': getattr(self, 'last_successful_sources', 0),
+                'failed_sources': getattr(self, 'last_failed_sources', 0),
+                'new_content_items': getattr(self, 'last_new_content', 0)
+            },
+            'session_info': {
+                'session_active': hasattr(self, 'session') and self.session is not None,
+                'twitter_logged_in': getattr(self, 'twitter_logged_in', False),
+                'instagram_logged_in': getattr(self, 'instagram_logged_in', False)
+            },
+            'dependencies': {
+                'instaloader_available': True,  # Available
+                'yt_dlp_available': True,       # Available  
+                'scrapling_available': False,   # Not used in main service
+                'feedparser_available': True    # Available
+            }
+        }
+
 # Global instance
 scraper_service = EnhancedScraperService() 

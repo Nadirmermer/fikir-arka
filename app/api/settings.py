@@ -254,10 +254,9 @@ async def get_system_stats() -> Dict[str, Any]:
     """Get system statistics and scraper info"""
     try:
         # Import scraper service to get stats
-        from app.services.scraper_service_v4 import ScraperServiceV4
+        from app.services.scraper_service import scraper_service
         
-        scraper = ScraperServiceV4()
-        scraper_stats = scraper.get_stats()
+        scraper_stats = scraper_service.get_stats()
         
         return {
             "scraper_stats": scraper_stats,

@@ -17,17 +17,26 @@ class Settings(BaseSettings):
     # App
     app_name: str = "Content Manager API"
     app_version: str = "2.0.0"
-    debug: bool = True
+    debug: bool = Field(default=True, description="Development mode - automatically False in production")
     
     # Database
     database_url: str = "sqlite+aiosqlite:///./data/content_manager.db"
-    db_echo: bool = False
+    db_echo: bool = Field(default=False, description="Log SQL queries - only for development")
 
     # AI
     gemini_api_key: str = Field("", alias="GEMINI_API_KEY")
-    default_ai_model: str = "gemini-2.5-flash"
+    default_ai_model: str = "gemini-2.0-flash-exp"
     ai_temperature: float = 0.7
     ai_max_tokens: int = 2000
+    
+    # Production settings
+    production_mode: bool = Field(default=False, alias="PRODUCTION")
+    log_level: str = Field(default="INFO", description="Logging level: DEBUG, INFO, WARNING, ERROR")
+    max_request_size: int = Field(default=10485760, description="Max request size in bytes (10MB)")
+    
+    # Rate limiting for production
+    rate_limit_enabled: bool = Field(default=True, description="Enable rate limiting")
+    rate_limit_requests: int = Field(default=100, description="Requests per minute per IP")
     
     # CORS
     cors_origins: list[str] = [
@@ -41,6 +50,13 @@ class Settings(BaseSettings):
     scheduler_timezone: str = "Europe/Istanbul"
     scrape_schedule_hour: int = 7  # 07:00 AM
     scrape_schedule_minute: int = 0
+
+    def __post_init__(self):
+        """Post-initialization to adjust settings for production"""
+        if self.production_mode:
+            self.debug = False
+            self.db_echo = False
+            self.log_level = "WARNING"
 
     model_config = SettingsConfigDict(
         env_file=".env", 
