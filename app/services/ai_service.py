@@ -24,7 +24,7 @@ class AIService:
         self._initialize_genai()
 
     def _get_api_key_from_file(self) -> Optional[str]:
-        """Read API key from settings.json"""
+        """settings.json içindeki Gemini API anahtarını döndürür (10+ karakter şartı)."""
         try:
             with open("settings.json", 'r', encoding='utf-8') as f:
                 settings_data = json.load(f)
@@ -32,13 +32,24 @@ class AIService:
             return api_key if api_key and len(api_key) > 10 else None
         except (FileNotFoundError, json.JSONDecodeError):
             return None
+
+    def _get_prompt_from_settings_file(self) -> Optional[str]:
+        """settings.json içindeki 'ai_prompt' alanını döndürür."""
+        try:
+            with open("settings.json", 'r', encoding='utf-8') as f:
+                settings_data = json.load(f)
+            prompt = settings_data.get("ai_prompt")
+            return prompt if prompt and len(prompt) > 20 else None
+        except (FileNotFoundError, json.JSONDecodeError):
+            return None
     
     def _initialize_genai(self):
         """Initialize Gemini AI, prioritizing key from settings.json"""
-        api_key = self._get_api_key_from_file() or self.settings.gemini_api_key
-        
+        # Sadece settings.json kullan; hazır .env anahtarlarını yükleme
+        api_key = self._get_api_key_from_file()
+
         if not api_key:
-            logger.warning("⚠️ Gemini API key not set in settings.json or .env file")
+            logger.warning("⚠️ Gemini API key not set. Kullanıcı Settings ekranından tanımlamalı.")
             return
         
         try:
@@ -146,15 +157,18 @@ class AIService:
         if custom_prompt:
             base_prompt = custom_prompt
         else:
-            # Load master prompt from file
-            try:
-                prompt_file_path = "ai_prompts/master_prompt.txt"
-                with open(prompt_file_path, 'r', encoding='utf-8') as f:
-                    base_prompt = f.read()
-            except FileNotFoundError:
-                logger.warning("Master prompt file not found, using default prompt")
-                # Fallback to default prompt
-                base_prompt = """
+            # Öncelik: settings.json → ai_prompt
+            base_prompt = self._get_prompt_from_settings_file()
+
+            if not base_prompt:
+                # İkinci seçenek: master_prompt.txt dosyası
+                try:
+                    prompt_file_path = "ai_prompts/master_prompt.txt"
+                    with open(prompt_file_path, 'r', encoding='utf-8') as f:
+                        base_prompt = f.read()
+                except FileNotFoundError:
+                    logger.warning("Master prompt file not found, using default prompt")
+                    base_prompt = """
 Sen bir psikoloji alanında uzman içerik üreticisisin. YouTube için kısa, etkileyici ve bilgilendirici videolar üretiyorsun.
 
 Görevin: Verilen konuyu baz alarak, özgün ve ilgi çekici bir YouTube videosu scripti yazmak.
